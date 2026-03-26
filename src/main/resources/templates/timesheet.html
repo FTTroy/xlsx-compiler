@@ -4,167 +4,82 @@
     <meta charset="UTF-8">
     <title>Timesheet Mensile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <style>
         body { font-family: Arial, sans-serif; margin: 10px; }
         h2 { font-size: 1.5em; margin-bottom: 10px; }
 
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
+        .controls label { font-size: 14px; display: flex; flex-direction: column; }
+        .controls select, .controls input { padding: 6px; font-size: 14px; }
 
-        .controls label {
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .controls select, .controls input {
-            padding: 6px;
-            font-size: 14px;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 12px;
-            min-width: 900px;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 5px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            font-size: 13px;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 12px;
-            padding: 5px;
-        }
-
-        .weekend {
-            background-color: #ffe6e6;
-        }
-
-        #btn-compila {
-            margin-top: 10px;
-            padding: 12px;
-            font-size: 16px;
-            width: 100%;
-            cursor: pointer;
-        }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { border-collapse: collapse; width: 100%; font-size: 12px; min-width: 900px; }
+        th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+        th { background-color: #f2f2f2; font-size: 13px; }
+        input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; font-size: 12px; padding: 5px; }
+        .weekend { background-color: #ffe6e6; }
+        #btn-compila { margin-top: 10px; padding: 12px; font-size: 16px; width: 100%; cursor: pointer; }
 
         /* MOBILE VIEW */
+        .card-container { display: none; }
         @media (max-width: 600px) {
+            table { display: none; }
+            .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 5px; padding-bottom: 10px; }
+            .card { border: 1px solid #ccc; border-radius: 6px; padding: 4px; background: #fff; font-size: 10px; cursor: pointer; min-height: 40px; display: flex; flex-direction: column; justify-content: center; }
+            .card.weekend { background-color: #ffe6e6; }
+            .card-header { font-weight: bold; text-align: center; margin-bottom: 2px; font-size: 11px; }
+            .card-value { font-size: 10px; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-            body {
-                margin: 5px;
-                font-size: 14px;
-            }
-
-            h2 {
-                text-align: center;
-                font-size: 1.2em;
-            }
-
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            table, thead, tbody, th, td, tr {
-                display: block;
-                width: 100%;
-            }
-
-            thead {
-                display: none;
-            }
-
-            tr {
-                margin-bottom: 15px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                padding: 10px;
-                background: #fff;
-            }
-
-            td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border: none;
-                padding: 6px 0;
-            }
-
-            td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                font-size: 12px;
-                color: #555;
-            }
-
-            input {
-                width: 60%;
-            }
+            .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+            .modal-content { background:#fff; padding:10px; border-radius:8px; width:90%; max-width:350px; }
+            .modal-content label { display:block; margin-top:5px; font-size:12px; }
+            .modal-content input { width:100%; font-size:12px; padding:4px; }
+            .modal-close { margin-top:10px; padding:6px 12px; cursor:pointer; font-size:12px; }
         }
     </style>
 </head>
-
 <body>
 
 <h2 id="titolo"></h2>
 
 <div class="controls">
-    <label>Seleziona Mese:
-        <select id="mese-select"></select>
-    </label>
-    <label>Località:
-        <input type="text" id="global-localita">
-    </label>
-    <label>Cliente:
-        <input type="text" id="global-cliente">
-    </label>
-    <label>Descrizione attività:
-        <input type="text" id="global-attivita">
-    </label>
+    <label>Seleziona Mese:<select id="mese-select"></select></label>
+    <label>Località:<input type="text" id="global-localita"></label>
+    <label>Cliente:<input type="text" id="global-cliente"></label>
+    <label>Descrizione attività:<input type="text" id="global-attivita"></label>
 </div>
 
 <div class="table-container">
     <table>
         <thead>
         <tr>
-            <th>Giorno</th>
-            <th>LOCALITA'</th>
-            <th>CLIENTE</th>
-            <th>ATTIVITA'</th>
-            <th>ORE ORD</th>
-            <th>STRAORD</th>
-            <th>ASSENZA</th>
-            <th>MOTIVO</th>
-            <th>TRASFERTA</th>
-            <th>INDENNITA'</th>
-            <th>VIAGGIO</th>
+            <th>Giorno</th><th>LOCALITA'</th><th>CLIENTE</th><th>ATTIVITA'</th>
+            <th>ORE ORD</th><th>STRAORD</th><th>ASSENZA</th><th>MOTIVO</th>
+            <th>TRASFERTA</th><th>INDENNITA'</th><th>VIAGGIO</th>
         </tr>
         </thead>
         <tbody id="corpo-tabella"></tbody>
     </table>
+</div>
+
+<div class="card-container" id="card-container"></div>
+
+<!-- Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <h4 id="modal-title"></h4>
+        <label>Località:<input type="text" id="modal-localita"></label>
+        <label>Cliente:<input type="text" id="modal-cliente"></label>
+        <label>Attività:<input type="text" id="modal-attivita"></label>
+        <label>Ore Ord:<input type="number" step="0.5" id="modal-oreord"></label>
+        <label>Straord:<input type="number" step="0.5" id="modal-straord"></label>
+        <label>Assenza:<input type="number" step="0.5" id="modal-assenza"></label>
+        <label>Motivo:<input type="text" id="modal-motivo"></label>
+        <label>Trasferta:<input type="text" id="modal-trasferta"></label>
+        <label>Indennità:<input type="text" id="modal-indennita"></label>
+        <label>Viaggio:<input type="text" id="modal-viaggio"></label>
+        <button class="modal-close" id="modal-save">Salva</button>
+    </div>
 </div>
 
 <button id="btn-compila">Compila</button>
@@ -172,75 +87,183 @@
 <script>
     const oggi = new Date();
     const annoCorrente = oggi.getFullYear();
-
-    const nomiMesi = [
-        "Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno",
-        "Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"
-    ];
+    const nomiMesi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+    const giorniSettimana = ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
 
     const meseSelect = document.getElementById("mese-select");
-
-    nomiMesi.forEach((nome, index) => {
-        const option = document.createElement("option");
-        option.value = index;
-        option.text = nome;
-        if (index === oggi.getMonth()) option.selected = true;
-        meseSelect.appendChild(option);
+    nomiMesi.forEach((nome,i)=>{
+        let opt = document.createElement("option");
+        opt.value = i;
+        opt.text = nome;
+        if(i === oggi.getMonth()) opt.selected = true;
+        meseSelect.appendChild(opt);
     });
 
     const titolo = document.getElementById("titolo");
     const tbody = document.getElementById("corpo-tabella");
+    const cardContainer = document.getElementById("card-container");
 
-    function generaTabella(mese) {
+    const modal = document.getElementById("editModal");
+    const modalTitle = document.getElementById("modal-title");
+    const modalInputs = {
+        localita: document.getElementById("modal-localita"),
+        cliente: document.getElementById("modal-cliente"),
+        attivita: document.getElementById("modal-attivita"),
+        oreord: document.getElementById("modal-oreord"),
+        straord: document.getElementById("modal-straord"),
+        assenza: document.getElementById("modal-assenza"),
+        motivo: document.getElementById("modal-motivo"),
+        trasferta: document.getElementById("modal-trasferta"),
+        indennita: document.getElementById("modal-indennita"),
+        viaggio: document.getElementById("modal-viaggio")
+    };
+    let currentCard = null;
+
+    function generaTabella(mese){
         tbody.innerHTML = "";
-
-        const giorniNelMese = new Date(annoCorrente, mese + 1, 0).getDate();
+        cardContainer.innerHTML = "";
+        const giorniNelMese = new Date(annoCorrente, mese+1, 0).getDate();
         titolo.innerText = `Timesheet - ${nomiMesi[mese]} ${annoCorrente}`;
 
-        for (let i = 1; i <= giorniNelMese; i++) {
-
+        for(let i=1; i<=giorniNelMese; i++){
             const data = new Date(annoCorrente, mese, i);
             const giornoSettimana = data.getDay();
-            const classe = (giornoSettimana === 0 || giornoSettimana === 6) ? "weekend" : "";
+            const classe = (giornoSettimana===0||giornoSettimana===6)?"weekend":"";
 
             const riga = document.createElement("tr");
             riga.className = classe;
-
             riga.innerHTML = `
-                <td data-label="Giorno">${i}</td>
-                <td data-label="Località"><input type="text" class="localita"></td>
-                <td data-label="Cliente"><input type="text" class="cliente"></td>
-                <td data-label="Attività"><input type="text" class="attivita"></td>
-                <td data-label="Ore Ord"><input type="number" step="0.5" value="${classe ? '' : 8}"></td>
-                <td data-label="Straord"><input type="number" step="0.5"></td>
-                <td data-label="Assenza"><input type="number" step="0.5"></td>
-                <td data-label="Motivo"><input type="text" class="motivo"></td>
-                <td data-label="Trasferta"><input type="text" class="trasferta"></td>
-                <td data-label="Indennità"><input type="text" class="indennita"></td>
-                <td data-label="Viaggio"><input type="text" class="viaggio"></td>
-            `;
+                <td>${i}</td>
+                <td><input type="text" class="localita"></td>
+                <td><input type="text" class="cliente"></td>
+                <td><input type="text" class="attivita"></td>
+                <td><input type="number" step="0.5" value="${classe?"":8}"></td>
+                <td><input type="number" step="0.5"></td>
+                <td><input type="number" step="0.5"></td>
+                <td><input type="text" class="motivo"></td>
+                <td><input type="text" class="trasferta"></td>
+                <td><input type="text" class="indennita"></td>
+                <td><input type="text" class="viaggio"></td>`;
+            tbody.appendChild(riga);
 
-            const inputMotivo = riga.querySelector(".motivo");
-
-            inputMotivo.addEventListener("input", function() {
-                if (this.value.trim() !== "") {
-                    const altri = ["localita","cliente","attivita","trasferta","indennita","viaggio"];
-                    altri.forEach(c => riga.querySelector("." + c).value = "");
-
+            riga.querySelector(".motivo").addEventListener("input",function(){
+                if(this.value.trim() !== ""){
+                    ["localita","cliente","attivita","trasferta","indennita","viaggio"].forEach(c => riga.querySelector("."+c).value = "");
                     riga.querySelectorAll("input[type='number']").forEach(n => n.value = "");
                 }
             });
 
-            tbody.appendChild(riga);
+            if(window.innerWidth <= 600){
+                generaCardPerRiga(riga,i-1,giornoSettimana,classe);
+            }
         }
     }
 
-    function aggiornaCampi(classe, valore) {
-        document.querySelectorAll("." + classe).forEach(campo => {
-            const riga = campo.closest("tr");
-            if (!riga.classList.contains("weekend")) {
-                campo.value = valore;
+    function generaCardPerRiga(riga,index,giornoSettimana,classe){
+        const card = document.createElement("div");
+        card.className = "card "+classe;
+        card.dataset.index = index;
+        const header = document.createElement("div");
+        header.className = "card-header";
+        header.textContent = `${index+1} - ${giorniSettimana[giornoSettimana]}`;
+        card.appendChild(header);
+
+        const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
+        fields.forEach(f => {
+            let input;
+            if(f==="oreord") input=riga.children[4].querySelector("input");
+            else if(f==="straord") input=riga.children[5].querySelector("input");
+            else if(f==="assenza") input=riga.children[6].querySelector("input");
+            else input=riga.querySelector("."+f);
+            if(input.value !== ""){
+                const valDiv = document.createElement("div");
+                valDiv.className = "card-value";
+                valDiv.dataset.field = f;
+                valDiv.textContent = input.value;
+                card.appendChild(valDiv);
             }
+        });
+
+        card.addEventListener("click", () => {
+            if(window.innerWidth > 600) return; // NO POPUP su desktop
+            currentCard = {card,row:riga};
+            modalTitle.textContent = header.textContent;
+            fields.forEach(f=>{
+                let input;
+                if(f==="oreord") input=riga.children[4].querySelector("input");
+                else if(f==="straord") input=riga.children[5].querySelector("input");
+                else if(f==="assenza") input=riga.children[6].querySelector("input");
+                else input=riga.querySelector("."+f);
+                modalInputs[f].value = input.value;
+            });
+            modal.style.display = "flex";
+        });
+
+        cardContainer.appendChild(card);
+    }
+
+    // Modal save
+    document.getElementById("modal-save").addEventListener("click", () => {
+        if(!currentCard) return;
+        const {card,row} = currentCard;
+        const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
+        const motivo = modalInputs.motivo.value.trim();
+
+        fields.forEach(f => {
+            let input;
+            if(f==="oreord") input=row.children[4].querySelector("input");
+            else if(f==="straord") input=row.children[5].querySelector("input");
+            else if(f==="assenza") input=row.children[6].querySelector("input");
+            else input=row.querySelector("."+f);
+
+            // Se motivo non vuoto, svuota gli altri campi
+            if(motivo!=="" && f !== "motivo"){
+                input.value = "";
+            } else {
+                input.value = modalInputs[f].value;
+            }
+        });
+
+        // Aggiorna card
+        card.querySelectorAll(".card-value").forEach(c=>c.remove());
+        fields.forEach(f=>{
+            let input;
+            if(f==="oreord") input=row.children[4].querySelector("input");
+            else if(f==="straord") input=row.children[5].querySelector("input");
+            else if(f==="assenza") input=row.children[6].querySelector("input");
+            else input=row.querySelector("."+f);
+            if(input.value!==""){
+                const valDiv = document.createElement("div");
+                valDiv.className = "card-value";
+                valDiv.dataset.field = f;
+                valDiv.textContent = input.value;
+                card.appendChild(valDiv);
+            }
+        });
+
+        modal.style.display = "none";
+        currentCard = null;
+    });
+
+    window.onclick = e => { if(e.target==modal){ modal.style.display="none"; currentCard=null; } }
+
+    // Global fields
+    function aggiornaCampi(classe,valore){
+        document.querySelectorAll("."+classe).forEach(campo=>{
+            const riga = campo.closest("tr");
+            if(!riga.classList.contains("weekend")) campo.value = valore;
+        });
+        rigeneraCardMobile();
+    }
+
+    function rigeneraCardMobile(){
+        if(window.innerWidth > 600) return;
+        cardContainer.innerHTML = "";
+        tbody.querySelectorAll("tr").forEach((riga,i)=>{
+            const data = new Date(annoCorrente,parseInt(meseSelect.value),i+1);
+            const giornoSettimana = data.getDay();
+            const classe = (giornoSettimana===0||giornoSettimana===6)?"weekend":"";
+            generaCardPerRiga(riga,i,giornoSettimana,classe);
         });
     }
 
@@ -248,26 +271,21 @@
     document.getElementById("global-cliente").addEventListener("input", e => aggiornaCampi("cliente", e.target.value));
     document.getElementById("global-attivita").addEventListener("input", e => aggiornaCampi("attivita", e.target.value));
 
-    meseSelect.addEventListener("change", function() {
-        generaTabella(parseInt(this.value));
-    });
+    meseSelect.addEventListener("change",()=>generaTabella(parseInt(meseSelect.value)));
 
-    generaTabella(oggi.getMonth());
-
-    function getTimesheetDataForJava() {
-        const righe = [];
-
-        tbody.querySelectorAll("tr").forEach(tr => {
+    // Compila
+    document.getElementById("btn-compila").addEventListener("click", function(){
+        const righe=[];
+        tbody.querySelectorAll("tr").forEach(tr=>{
             const cells = tr.querySelectorAll("td");
-
             righe.push({
                 day: parseInt(cells[0].textContent),
                 localita: cells[1].querySelector("input").value,
                 cliente: cells[2].querySelector("input").value,
                 attivita: cells[3].querySelector("input").value,
-                oreOrdinarie: parseInt(cells[4].querySelector("input").value),
-                oreStraordinarie: parseInt(cells[5].querySelector("input").value),
-                oreAssenza: parseInt(cells[6].querySelector("input").value),
+                oreOrdinarie: parseFloat(cells[4].querySelector("input").value),
+                oreStraordinarie: parseFloat(cells[5].querySelector("input").value),
+                oreAssenza: parseFloat(cells[6].querySelector("input").value),
                 motivoAssenza: cells[7].querySelector("input").value,
                 trasferta: cells[8].querySelector("input").value,
                 indennita: cells[9].querySelector("input").value,
@@ -275,41 +293,31 @@
             });
         });
 
-        return {
-            mese: parseInt(meseSelect.value) + 1,
-            rowDataList: righe
-        };
-    }
+        const body = { mese: parseInt(meseSelect.value)+1, rowDataList: righe };
 
-    document.getElementById("btn-compila").addEventListener("click", function() {
-
-        const body = getTimesheetDataForJava();
-
-        fetch("/xlsx/", {
+        fetch("/xlsx/",{
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {"Content-Type":"application/json"},
             body: JSON.stringify(body)
         })
-        .then(res => {
-            if (!res.ok) throw new Error();
-            return res.blob();
-        })
+        .then(res => { if(!res.ok) throw new Error(); return res.blob(); })
         .then(blob => {
             const meseIndex = parseInt(meseSelect.value);
             const nomeMeseUpper = nomiMesi[meseIndex].toUpperCase();
-
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
             a.download = `GIORNALIERA PINTUS GIUSEPPE ${nomeMeseUpper}.xlsx`;
-
             document.body.appendChild(a);
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
         })
-        .catch(() => alert("Errore nel download"));
+        .catch(()=>alert("Errore nel download"));
     });
+
+    generaTabella(oggi.getMonth());
+    window.addEventListener("resize", ()=>generaTabella(parseInt(meseSelect.value)));
 </script>
 
 </body>
