@@ -33,6 +33,7 @@ public class XlsxService {
                                 XlsxUtils.writeRowDataInXlsx(month, sheet, rowData);
                             }
                     );
+            evaluateCellFormulas(workbook);
             workbook.setForceFormulaRecalculation(true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             workbook.write(baos);
