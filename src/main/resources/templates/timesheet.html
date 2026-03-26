@@ -95,7 +95,7 @@
         let opt = document.createElement("option");
         opt.value = i;
         opt.text = nome;
-        if(i === oggi.getMonth()) opt.selected = true;
+        if(i===oggi.getMonth()) opt.selected=true;
         meseSelect.appendChild(opt);
     });
 
@@ -103,6 +103,7 @@
     const tbody = document.getElementById("corpo-tabella");
     const cardContainer = document.getElementById("card-container");
 
+    // Modal
     const modal = document.getElementById("editModal");
     const modalTitle = document.getElementById("modal-title");
     const modalInputs = {
@@ -119,20 +120,26 @@
     };
     let currentCard = null;
 
+    // Verifica se siamo su mobile
+    function isMobile() {
+        return window.matchMedia("(max-width:600px)").matches;
+    }
+
     function generaTabella(mese){
         tbody.innerHTML = "";
         cardContainer.innerHTML = "";
         const giorniNelMese = new Date(annoCorrente, mese+1, 0).getDate();
         titolo.innerText = `Timesheet - ${nomiMesi[mese]} ${annoCorrente}`;
 
-        for(let i=1; i<=giorniNelMese; i++){
+        for(let i=1;i<=giorniNelMese;i++){
             const data = new Date(annoCorrente, mese, i);
             const giornoSettimana = data.getDay();
             const classe = (giornoSettimana===0||giornoSettimana===6)?"weekend":"";
 
+            // --- Desktop ---
             const riga = document.createElement("tr");
             riga.className = classe;
-            riga.innerHTML = `
+            riga.innerHTML=`
                 <td>${i}</td>
                 <td><input type="text" class="localita"></td>
                 <td><input type="text" class="cliente"></td>
@@ -146,14 +153,16 @@
                 <td><input type="text" class="viaggio"></td>`;
             tbody.appendChild(riga);
 
-            riga.querySelector(".motivo").addEventListener("input",function(){
-                if(this.value.trim() !== ""){
-                    ["localita","cliente","attivita","trasferta","indennita","viaggio"].forEach(c => riga.querySelector("."+c).value = "");
-                    riga.querySelectorAll("input[type='number']").forEach(n => n.value = "");
+            // Motivo svuota solo i campi della riga corrente
+            riga.querySelector(".motivo").addEventListener("input", function(){
+                if(this.value.trim()!==""){
+                    ["localita","cliente","attivita","trasferta","indennita","viaggio"].forEach(c=>riga.querySelector("."+c).value="");
+                    riga.querySelectorAll("input[type='number']").forEach(n=>n.value="");
                 }
             });
 
-            if(window.innerWidth <= 600){
+            // --- Card mobile solo su mobile reale ---
+            if(isMobile()){
                 generaCardPerRiga(riga,i-1,giornoSettimana,classe);
             }
         }
@@ -169,13 +178,13 @@
         card.appendChild(header);
 
         const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
-        fields.forEach(f => {
+        fields.forEach(f=>{
             let input;
-            if(f==="oreord") input=riga.children[4].querySelector("input");
-            else if(f==="straord") input=riga.children[5].querySelector("input");
-            else if(f==="assenza") input=riga.children[6].querySelector("input");
-            else input=riga.querySelector("."+f);
-            if(input.value !== ""){
+            if(f==="oreord") input = riga.children[4].querySelector("input");
+            else if(f==="straord") input = riga.children[5].querySelector("input");
+            else if(f==="assenza") input = riga.children[6].querySelector("input");
+            else input = riga.querySelector("."+f);
+            if(input.value!==""){
                 const valDiv = document.createElement("div");
                 valDiv.className = "card-value";
                 valDiv.dataset.field = f;
@@ -184,47 +193,53 @@
             }
         });
 
-        card.addEventListener("click", () => {
-            if(window.innerWidth > 600) return; // NO POPUP su desktop
+        // Apri modal solo in mobile
+        card.addEventListener("click", ()=>{
+            if(!isMobile()) return;
             currentCard = {card,row:riga};
             modalTitle.textContent = header.textContent;
             fields.forEach(f=>{
                 let input;
-                if(f==="oreord") input=riga.children[4].querySelector("input");
-                else if(f==="straord") input=riga.children[5].querySelector("input");
-                else if(f==="assenza") input=riga.children[6].querySelector("input");
-                else input=riga.querySelector("."+f);
+                if(f==="oreord") input = riga.children[4].querySelector("input");
+                else if(f==="straord") input = riga.children[5].querySelector("input");
+                else if(f==="assenza") input = riga.children[6].querySelector("input");
+                else input = riga.querySelector("."+f);
                 modalInputs[f].value = input.value;
             });
             modal.style.display = "flex";
         });
-
         cardContainer.appendChild(card);
     }
 
     // Modal save
-    document.getElementById("modal-save").addEventListener("click", () => {
+    document.getElementById("modal-save").addEventListener("click", ()=>{
         if(!currentCard) return;
         const {card,row} = currentCard;
         const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
-        const motivo = modalInputs.motivo.value.trim();
+        const motivoValue = modalInputs.motivo.value.trim();
 
-        fields.forEach(f => {
+        fields.forEach(f=>{
             let input;
             if(f==="oreord") input=row.children[4].querySelector("input");
             else if(f==="straord") input=row.children[5].querySelector("input");
             else if(f==="assenza") input=row.children[6].querySelector("input");
             else input=row.querySelector("."+f);
-
-            // Se motivo non vuoto, svuota gli altri campi
-            if(motivo!=="" && f !== "motivo"){
-                input.value = "";
-            } else {
-                input.value = modalInputs[f].value;
-            }
+            input.value = modalInputs[f].value;
         });
 
-        // Aggiorna card
+        // Se motivo compilato, svuota solo i campi della riga corrente
+        if(isMobile() && motivoValue!==""){
+            ["localita","cliente","attivita","trasferta","indennita","viaggio","oreord","straord","assenza"].forEach(f=>{
+                let input;
+                if(f==="oreord") input=row.children[4].querySelector("input");
+                else if(f==="straord") input=row.children[5].querySelector("input");
+                else if(f==="assenza") input=row.children[6].querySelector("input");
+                else input=row.querySelector("."+f);
+                if(f!=="motivo") input.value="";
+            });
+        }
+
+        // aggiorna card corrente
         card.querySelectorAll(".card-value").forEach(c=>c.remove());
         fields.forEach(f=>{
             let input;
@@ -235,7 +250,7 @@
             if(input.value!==""){
                 const valDiv = document.createElement("div");
                 valDiv.className = "card-value";
-                valDiv.dataset.field = f;
+                valDiv.dataset.field=f;
                 valDiv.textContent = input.value;
                 card.appendChild(valDiv);
             }
@@ -245,27 +260,30 @@
         currentCard = null;
     });
 
-    window.onclick = e => { if(e.target==modal){ modal.style.display="none"; currentCard=null; } }
+    window.onclick = e => {if(e.target==modal){modal.style.display="none"; currentCard=null;}}
 
-    // Global fields
+    // Campi globali
     function aggiornaCampi(classe,valore){
-    document.querySelectorAll("."+classe).forEach(campo=>{
-        const riga=campo.closest("tr");
-        if(!riga.classList.contains("weekend")) campo.value=valore;
-    });
-
-    // Aggiorna solo le card se il modal NON è aperto
-    if(!currentCard) rigeneraCardMobile();
-}
-
-    function rigeneraCardMobile(){
-        if(window.innerWidth > 600) return;
-        cardContainer.innerHTML = "";
-        tbody.querySelectorAll("tr").forEach((riga,i)=>{
-            const data = new Date(annoCorrente,parseInt(meseSelect.value),i+1);
-            const giornoSettimana = data.getDay();
-            const classe = (giornoSettimana===0||giornoSettimana===6)?"weekend":"";
-            generaCardPerRiga(riga,i,giornoSettimana,classe);
+        document.querySelectorAll("."+classe).forEach(campo=>{
+            const riga = campo.closest("tr");
+            if(!riga.classList.contains("weekend")){
+                campo.value = valore;
+                // Aggiorna solo la card relativa a questa riga su mobile
+                if(isMobile()){
+                    const index = Array.from(tbody.children).indexOf(riga);
+                    const card = cardContainer.querySelector(`.card[data-index='${index}']`);
+                    if(card){
+                        let valDiv = card.querySelector(`.card-value[data-field='${classe}']`);
+                        if(!valDiv){
+                            valDiv = document.createElement("div");
+                            valDiv.className = "card-value";
+                            valDiv.dataset.field = classe;
+                            card.appendChild(valDiv);
+                        }
+                        valDiv.textContent = valore;
+                    }
+                }
+            }
         });
     }
 
@@ -273,11 +291,12 @@
     document.getElementById("global-cliente").addEventListener("input", e => aggiornaCampi("cliente", e.target.value));
     document.getElementById("global-attivita").addEventListener("input", e => aggiornaCampi("attivita", e.target.value));
 
-    meseSelect.addEventListener("change",()=>generaTabella(parseInt(meseSelect.value)));
+    meseSelect.addEventListener("change", ()=>generaTabella(parseInt(meseSelect.value)));
 
-    // Compila
+    // Funzione "Compila" originale con blur forzato per mobile
     document.getElementById("btn-compila").addEventListener("click", function(){
-        const righe=[];
+        document.querySelectorAll("input").forEach(i=>i.blur()); // salva valori input attivi
+        const righe = [];
         tbody.querySelectorAll("tr").forEach(tr=>{
             const cells = tr.querySelectorAll("td");
             righe.push({
@@ -285,9 +304,9 @@
                 localita: cells[1].querySelector("input").value,
                 cliente: cells[2].querySelector("input").value,
                 attivita: cells[3].querySelector("input").value,
-                oreOrdinarie: parseFloat(cells[4].querySelector("input").value),
-                oreStraordinarie: parseFloat(cells[5].querySelector("input").value),
-                oreAssenza: parseFloat(cells[6].querySelector("input").value),
+                oreOrdinarie: parseInt(cells[4].querySelector("input").value)||0,
+                oreStraordinarie: parseInt(cells[5].querySelector("input").value)||0,
+                oreAssenza: parseInt(cells[6].querySelector("input").value)||0,
                 motivoAssenza: cells[7].querySelector("input").value,
                 trasferta: cells[8].querySelector("input").value,
                 indennita: cells[9].querySelector("input").value,
@@ -295,16 +314,16 @@
             });
         });
 
-        const body = { mese: parseInt(meseSelect.value)+1, rowDataList: righe };
+        const body = {mese: parseInt(meseSelect.value)+1, rowDataList: righe};
 
         fetch("/xlsx/",{
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
             body: JSON.stringify(body)
         })
-        .then(res => { if(!res.ok) throw new Error(); return res.blob(); })
-        .then(blob => {
-            const meseIndex = parseInt(meseSelect.value);
+        .then(res=>{if(!res.ok)throw new Error(); return res.blob();})
+        .then(blob=>{
+            const meseIndex=parseInt(meseSelect.value);
             const nomeMeseUpper = nomiMesi[meseIndex].toUpperCase();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -319,7 +338,9 @@
     });
 
     generaTabella(oggi.getMonth());
-    window.addEventListener("resize", ()=>generaTabella(parseInt(meseSelect.value)));
+
+    // Aggiornamento resize dinamico
+    window.addEventListener("resize",()=>generaTabella(parseInt(meseSelect.value)));
 </script>
 
 </body>
