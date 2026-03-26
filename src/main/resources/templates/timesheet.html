@@ -249,12 +249,14 @@
 
     // Global fields
     function aggiornaCampi(classe,valore){
-        document.querySelectorAll("."+classe).forEach(campo=>{
-            const riga = campo.closest("tr");
-            if(!riga.classList.contains("weekend")) campo.value = valore;
-        });
-        rigeneraCardMobile();
-    }
+    document.querySelectorAll("."+classe).forEach(campo=>{
+        const riga=campo.closest("tr");
+        if(!riga.classList.contains("weekend")) campo.value=valore;
+    });
+
+    // Aggiorna solo le card se il modal NON è aperto
+    if(!currentCard) rigeneraCardMobile();
+}
 
     function rigeneraCardMobile(){
         if(window.innerWidth > 600) return;
