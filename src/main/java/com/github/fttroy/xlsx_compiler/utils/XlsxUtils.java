@@ -61,15 +61,9 @@ public class XlsxUtils {
         }
     }
 
-    public static void evaluateCellFormulas(Sheet sheet, Workbook workbook) {
+    public static void evaluateCellFormulas(Workbook workbook) {
         FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-        sheet.forEach(row ->
-                row.forEach(cell ->
-                        {
-                            if (cell.getCellType() == CellType.FORMULA) evaluator.evaluateFormulaCell(cell);
-                        }
-                )
-        );
+        evaluator.evaluateAll();
     }
 
     private static void write(Cell cell, Object value) {

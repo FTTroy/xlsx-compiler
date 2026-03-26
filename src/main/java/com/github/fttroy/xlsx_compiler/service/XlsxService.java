@@ -25,7 +25,7 @@ public class XlsxService {
 
             Sheet sheet = workbook.getSheetAt(0);
             setDatesInExcel(sheet, formData.getMese());
-            evaluateCellFormulas(sheet, workbook);
+            evaluateCellFormulas(workbook);
 
             String month = getMonth(formData.getMese(), false);
             formData.getRowDataList()
