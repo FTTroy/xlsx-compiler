@@ -118,9 +118,9 @@
         indennita: document.getElementById("modal-indennita"),
         viaggio: document.getElementById("modal-viaggio")
     };
+
     let currentCard = null;
 
-    // Verifica se siamo su mobile
     function isMobile() {
         return window.matchMedia("(max-width:600px)").matches;
     }
@@ -136,7 +136,6 @@
             const giornoSettimana = data.getDay();
             const classe = (giornoSettimana===0||giornoSettimana===6)?"weekend":"";
 
-            // --- Desktop ---
             const riga = document.createElement("tr");
             riga.className = classe;
             riga.innerHTML=`
@@ -153,7 +152,7 @@
                 <td><input type="text" class="viaggio"></td>`;
             tbody.appendChild(riga);
 
-            // Motivo svuota solo i campi della riga corrente
+            // ✔ Desktop: svuota solo quando scrivi il motivo
             riga.querySelector(".motivo").addEventListener("input", function(){
                 if(this.value.trim()!==""){
                     ["localita","cliente","attivita","trasferta","indennita","viaggio"].forEach(c=>riga.querySelector("."+c).value="");
@@ -161,7 +160,6 @@
                 }
             });
 
-            // --- Card mobile solo su mobile reale ---
             if(isMobile()){
                 generaCardPerRiga(riga,i-1,giornoSettimana,classe);
             }
@@ -172,18 +170,21 @@
         const card = document.createElement("div");
         card.className = "card "+classe;
         card.dataset.index = index;
+
         const header = document.createElement("div");
         header.className = "card-header";
         header.textContent = `${index+1} - ${giorniSettimana[giornoSettimana]}`;
         card.appendChild(header);
 
         const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
+
         fields.forEach(f=>{
             let input;
             if(f==="oreord") input = riga.children[4].querySelector("input");
             else if(f==="straord") input = riga.children[5].querySelector("input");
             else if(f==="assenza") input = riga.children[6].querySelector("input");
             else input = riga.querySelector("."+f);
+
             if(input.value!==""){
                 const valDiv = document.createElement("div");
                 valDiv.className = "card-value";
@@ -193,30 +194,45 @@
             }
         });
 
-        // Apri modal solo in mobile
         card.addEventListener("click", ()=>{
             if(!isMobile()) return;
+
             currentCard = {card,row:riga};
             modalTitle.textContent = header.textContent;
+
             fields.forEach(f=>{
                 let input;
                 if(f==="oreord") input = riga.children[4].querySelector("input");
                 else if(f==="straord") input = riga.children[5].querySelector("input");
                 else if(f==="assenza") input = riga.children[6].querySelector("input");
                 else input = riga.querySelector("."+f);
+
                 modalInputs[f].value = input.value;
             });
+
             modal.style.display = "flex";
         });
+
         cardContainer.appendChild(card);
     }
 
-    // Modal save
+    // ✔ FIX PRINCIPALE: comportamento corretto anche nel modal
+    modalInputs.motivo.addEventListener("input", function(){
+        if(this.value.trim()!==""){
+            Object.keys(modalInputs).forEach(k=>{
+                if(k !== "motivo"){
+                    modalInputs[k].value = "";
+                }
+            });
+        }
+    });
+
+    // SAVE MODAL (senza bug)
     document.getElementById("modal-save").addEventListener("click", ()=>{
         if(!currentCard) return;
+
         const {card,row} = currentCard;
         const fields = ["localita","cliente","attivita","oreord","straord","assenza","motivo","trasferta","indennita","viaggio"];
-        const motivoValue = modalInputs.motivo.value.trim();
 
         fields.forEach(f=>{
             let input;
@@ -224,29 +240,20 @@
             else if(f==="straord") input=row.children[5].querySelector("input");
             else if(f==="assenza") input=row.children[6].querySelector("input");
             else input=row.querySelector("."+f);
+
             input.value = modalInputs[f].value;
         });
 
-        // Se motivo compilato, svuota solo i campi della riga corrente
-        if(isMobile() && motivoValue!==""){
-            ["localita","cliente","attivita","trasferta","indennita","viaggio","oreord","straord","assenza"].forEach(f=>{
-                let input;
-                if(f==="oreord") input=row.children[4].querySelector("input");
-                else if(f==="straord") input=row.children[5].querySelector("input");
-                else if(f==="assenza") input=row.children[6].querySelector("input");
-                else input=row.querySelector("."+f);
-                if(f!=="motivo") input.value="";
-            });
-        }
-
-        // aggiorna card corrente
+        // aggiorna card
         card.querySelectorAll(".card-value").forEach(c=>c.remove());
+
         fields.forEach(f=>{
             let input;
             if(f==="oreord") input=row.children[4].querySelector("input");
             else if(f==="straord") input=row.children[5].querySelector("input");
             else if(f==="assenza") input=row.children[6].querySelector("input");
             else input=row.querySelector("."+f);
+
             if(input.value!==""){
                 const valDiv = document.createElement("div");
                 valDiv.className = "card-value";
@@ -260,32 +267,48 @@
         currentCard = null;
     });
 
-    window.onclick = e => {if(e.target==modal){modal.style.display="none"; currentCard=null;}}
+    window.onclick = e => {
+        if(e.target==modal){
+            modal.style.display="none";
+            currentCard=null;
+        }
+    };
 
-    // Campi globali
-    function aggiornaCampi(classe,valore){
-        document.querySelectorAll("."+classe).forEach(campo=>{
-            const riga = campo.closest("tr");
-            if(!riga.classList.contains("weekend")){
-                campo.value = valore;
-                // Aggiorna solo la card relativa a questa riga su mobile
-                if(isMobile()){
-                    const index = Array.from(tbody.children).indexOf(riga);
-                    const card = cardContainer.querySelector(`.card[data-index='${index}']`);
-                    if(card){
-                        let valDiv = card.querySelector(`.card-value[data-field='${classe}']`);
-                        if(!valDiv){
-                            valDiv = document.createElement("div");
-                            valDiv.className = "card-value";
-                            valDiv.dataset.field = classe;
-                            card.appendChild(valDiv);
-                        }
-                        valDiv.textContent = valore;
+    // GLOBALI
+  function aggiornaCampi(classe,valore){
+    document.querySelectorAll("."+classe).forEach(campo=>{
+        const riga = campo.closest("tr");
+
+        if(!riga.classList.contains("weekend")){
+            campo.value = valore;
+
+            // 🔥 AGGIORNA ANCHE LA CARD MOBILE
+            if(isMobile()){
+                const index = Array.from(tbody.children).indexOf(riga);
+                const card = cardContainer.querySelector(`.card[data-index='${index}']`);
+
+                if(card){
+                    let valDiv = card.querySelector(`.card-value[data-field='${classe}']`);
+
+                    // Se non esiste lo crea
+                    if(!valDiv){
+                        valDiv = document.createElement("div");
+                        valDiv.className = "card-value";
+                        valDiv.dataset.field = classe;
+                        card.appendChild(valDiv);
+                    }
+
+                    valDiv.textContent = valore;
+
+                    // Se valore vuoto → rimuove dalla card
+                    if(valore.trim() === ""){
+                        valDiv.remove();
                     }
                 }
             }
-        });
-    }
+        }
+    });
+}
 
     document.getElementById("global-localita").addEventListener("input", e => aggiornaCampi("localita", e.target.value));
     document.getElementById("global-cliente").addEventListener("input", e => aggiornaCampi("cliente", e.target.value));
@@ -293,9 +316,9 @@
 
     meseSelect.addEventListener("change", ()=>generaTabella(parseInt(meseSelect.value)));
 
-    // Funzione "Compila" originale con blur forzato per mobile
     document.getElementById("btn-compila").addEventListener("click", function(){
-        document.querySelectorAll("input").forEach(i=>i.blur()); // salva valori input attivi
+        document.querySelectorAll("input").forEach(i=>i.blur());
+
         const righe = [];
         tbody.querySelectorAll("tr").forEach(tr=>{
             const cells = tr.querySelectorAll("td");
@@ -304,9 +327,9 @@
                 localita: cells[1].querySelector("input").value,
                 cliente: cells[2].querySelector("input").value,
                 attivita: cells[3].querySelector("input").value,
-                oreOrdinarie: parseInt(cells[4].querySelector("input").value)||0,
-                oreStraordinarie: parseInt(cells[5].querySelector("input").value)||0,
-                oreAssenza: parseInt(cells[6].querySelector("input").value)||0,
+                oreOrdinarie: parseInt(cells[4].querySelector("input").value),
+                oreStraordinarie: parseInt(cells[5].querySelector("input").value),
+                oreAssenza: parseInt(cells[6].querySelector("input").value),
                 motivoAssenza: cells[7].querySelector("input").value,
                 trasferta: cells[8].querySelector("input").value,
                 indennita: cells[9].querySelector("input").value,
@@ -339,9 +362,7 @@
 
     generaTabella(oggi.getMonth());
 
-    // Aggiornamento resize dinamico
     window.addEventListener("resize",()=>generaTabella(parseInt(meseSelect.value)));
 </script>
-
 </body>
 </html>
